@@ -4,7 +4,6 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import "dotenv/config";
 
-
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -23,6 +22,21 @@ app.get("/health", (req, res) => {
   res.send("OK");
 });
 
+/* Tone-specific instructions */
+const toneInstructions = {
+  casual:
+    "Sound natural and friendly, like a teammate chatting at work. Keep it relaxed and informal but clear.",
+
+  polite:
+    "Sound courteous and respectful. Use polite wording without being too formal.",
+
+  professional:
+    "Sound clear, neutral, and professional. Suitable for internal office communication.",
+
+  boss:
+    "Sound highly respectful, polished, and client-facing. Use formal phrasing, indirect requests, and professional courtesy. Avoid casual language."
+};
+
 app.post("/fix", limiter, async (req, res) => {
   const { text, tone = "professional" } = req.body;
 
@@ -33,15 +47,17 @@ app.post("/fix", limiter, async (req, res) => {
   }
 
   const prompt = `
-Rewrite the following WhatsApp office message into clear English.
-
-Tone: ${tone}
+You rewrite short WhatsApp office messages into correct English.
 
 Rules:
-- Do not explain
-- Do not add information
-- Keep it short
-- Output only the corrected message
+- Correct grammar and spelling
+- Do NOT explain
+- Do NOT add new information
+- Keep it concise
+- Output ONLY the rewritten message
+
+Tone requirement:
+${toneInstructions[tone]}
 
 Message:
 ${cleanText}
@@ -49,39 +65,38 @@ ${cleanText}
 
   try {
     const response = await axios.post(
-  OPENROUTER_API_URL,
-  {
-    model: "mistralai/mistral-7b-instruct",
-    messages: [
+      OPENROUTER_API_URL,
       {
-        role: "user",
-        content: prompt
+        model: "mistralai/mistral-7b-instruct",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.4,
+        max_tokens: 120
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "http://localhost",
+          "X-Title": "Office English Fixer"
+        }
       }
-    ],
-    temperature: 0.4,
-    max_tokens: 120
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "http://localhost",
-      "X-Title": "Office English Fixer"
-    }
-  }
-);
+    );
 
-    const output =
-  response.data?.choices?.[0]?.message?.content?.trim();
+    const output = response.data?.choices?.[0]?.message?.content?.trim();
     res.json({ result: output });
 
   } catch (error) {
-    console.error("HF ERROR STATUS:", error.response?.status);
-    console.error("HF ERROR DATA:", error.response?.data);
-    console.error("HF ERROR MESSAGE:", error.message);
+    console.error("OPENROUTER ERROR STATUS:", error.response?.status);
+    console.error("OPENROUTER ERROR DATA:", error.response?.data);
+    console.error("OPENROUTER ERROR MESSAGE:", error.message);
 
     res.status(500).json({
-      error: "HF error",
+      error: "AI error",
       status: error.response?.status,
       details: error.response?.data || error.message
     });
