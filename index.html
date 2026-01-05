@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Office English Fixer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ 
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+ 
+ <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: #ffffff;
+      max-width: 600px;
+      width: 100%;
+      padding: 24px;
+      margin: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    h1 {
+       margin: 0;
+       font-size: 24px;
+       font-weight: 600;
+       text-align: center;
+       letter-spacing: -0.02em;
+       text-shadow: 0 1px 1px rgba(0,0,0,0.04); /* subtle, as discussed */
+    }
+
+
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      font-weight: 400;
+      margin-bottom: 26px;
+    }
+
+    label {
+      font-weight: 500;
+      margin-top: 18px;
+      display: block;
+      font-size: 14px;
+      color: #111827;
+    }
+
+    textarea {
+      width: 100%;
+      margin-top: 8px;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      resize: none;
+      font-size: 14px;
+      line-height: 1.5;
+      transition: border 0.15s ease, box-shadow 0.15s ease;
+    }
+    
+    /* Subtle engagement when user is typing */
+textarea:not(:placeholder-shown) {
+  border-color: #93c5fd;
+}
+
+
+     textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .char-count {
+      font-size: 12px;
+      color: #777;
+      text-align: right;
+      margin-top: 4px;
+    }
+
+    .tones {
+      margin-top: 12px;
+    }
+
+    .pill-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.pill {
+  position: relative;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: inset 0 0 0 rgba(0,0,0,0);
+}
+
+.pill input {
+  display: none;
+}
+
+/* Hover */
+.pill:hover {
+  background: #e5e7eb;
+}
+
+/* Active (checked) state */
+.pill input:checked + span,
+.pill:has(input:checked) {
+  background: #ffffff;
+  color: #111827;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.06),
+    0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* Press effect */
+.pill:active {
+  transform: scale(0.98);
+}
+
+
+    .tone-option {
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+}
+
+.primary-btn {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow:
+    0 6px 14px rgba(37, 99, 235, 0.25),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.primary-btn.ready {
+  box-shadow:
+    0 10px 22px rgba(37, 99, 235, 0.32),
+    inset 0 1px 0 rgba(255,255,255,0.28);
+}
+
+/* Hover */
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 20px rgba(37, 99, 235, 0.28),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+/* Press */
+.primary-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow:
+    0 4px 10px rgba(37, 99, 235, 0.22),
+    inset 0 2px 4px rgba(0,0,0,0.12);
+}
+
+/* Disabled */
+.primary-btn:disabled {
+  background: #c7d2fe;
+  color: #eef2ff;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.primary-btn.loading {
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+    .output-section {
+  display: none;
+  margin-top: 24px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.output-section.show {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+    .copy-btn {
+      background: #10b981;
+      color: white;
+      margin-top: 10px;
+    }
+
+    .copied {
+      text-align: center;
+      color: #059669;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #777;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Office English Fixer</h1>
+    <div class="subtitle">
+      Fix mixed WhatsApp messages into clear office English
+    </div>
+
+    <label for="inputText">Paste your WhatsApp message</label>
+    <textarea id="inputText" rows="5" maxlength="400"
+      placeholder="team tomorrow meeting rescheduled to 4pm pls join"></textarea>
+    <div class="char-count">
+      <span id="charCount">0</span>/400 characters
+    </div>
+
+    <label>Choose tone</label>
+<div class="tones pill-group">
+  <label class="pill">
+    <input type="radio" name="tone" value="casual" />
+    Casual office
+  </label>
+
+  <label class="pill">
+    <input type="radio" name="tone" value="polite" />
+    Polite
+  </label>
+
+  <label class="pill">
+    <input type="radio" name="tone" value="professional" checked />
+    Professional
+  </label>
+
+  <label class="pill">
+    <input type="radio" name="tone" value="boss" />
+    Boss / Client
+  </label>
+</div>
+
+
+    <button id="fixBtn" class="primary-btn" disabled>
+      Fix my English
+    </button>
+
+    <div class="output-section" id="outputSection">
+      <label>Corrected message</label>
+      <textarea id="outputText" rows="4"></textarea>
+
+      <button class="copy-btn" id="copyBtn">📋 Copy for WhatsApp</button>
+      <div class="copied" id="copiedMsg" style="display:none;">
+        Copied ✔️
+      </div>
+    </div>
+
+    <div class="footer">
+      Built for short office WhatsApp messages. Not for emails or long writing.
+    </div>
+  </div>
+
+  <script>
+    const inputText = document.getElementById("inputText");
+    const charCount = document.getElementById("charCount");
+    const fixBtn = document.getElementById("fixBtn");
+    const outputSection = document.getElementById("outputSection");
+    const outputText = document.getElementById("outputText");
+    const copyBtn = document.getElementById("copyBtn");
+    const copiedMsg = document.getElementById("copiedMsg");
+
+    inputText.addEventListener("input", () => {
+  const hasText = inputText.value.trim().length > 0;
+
+  charCount.textContent = inputText.value.length;
+  fixBtn.disabled = !hasText;
+
+  if (hasText) {
+    fixBtn.classList.add("ready");
+  } else {
+    fixBtn.classList.remove("ready");
+  }
+});
+
+
+    fixBtn.addEventListener("click", async () => {
+  const selectedTone =
+    document.querySelector("input[name='tone']:checked").value;
+
+  fixBtn.disabled = true;
+  fixBtn.classList.add("loading");
+  fixBtn.textContent = "Fixing...";
+
+  try {
+    const response = await fetch("http://localhost:3000/fix", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        text: inputText.value,
+        tone: selectedTone
+      })
+    });
+
+    const data = await response.json();
+    outputText.value = data.result;
+
+    outputSection.classList.add("show");
+copiedMsg.style.display = "none";
+
+  } catch (err) {
+    alert("Something went wrong. Please try again.");
+  } finally {
+    fixBtn.disabled = false;
+    fixBtn.classList.remove("loading");
+    fixBtn.textContent = "Fix my English";
+  }
+});
+
+
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(outputText.value);
+      copiedMsg.style.display = "block";
+      setTimeout(() => copiedMsg.style.display = "none", 1500);
+    });
+  </script>
+</body>
+</html>
