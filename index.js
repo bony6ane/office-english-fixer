@@ -7,14 +7,14 @@ import "dotenv/config";
 const app = express();
 app.use(
   cors({
-    origin: "*",
-    methods: ["GET", "POST", "OPTIONS"],
+    origin: true, // reflect request origin
+    methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 
 // Handle preflight requests explicitly
-app.options("*", cors());
+
 app.use(express.json());
 
 /* Rate limiting */
