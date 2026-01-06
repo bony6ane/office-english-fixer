@@ -5,7 +5,16 @@ import rateLimit from "express-rate-limit";
 import "dotenv/config";
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
+
+// Handle preflight requests explicitly
+app.options("*", cors());
 app.use(express.json());
 
 /* Rate limiting */
