@@ -5,15 +5,14 @@ import "dotenv/config";
 
 const app = express();
 
-/* ---------- MUST COME FIRST ---------- */
+/* -------------------- BASIC SETUP -------------------- */
 app.use(express.json());
 
-/* ---------- MANUAL CORS (GLOBAL) ---------- */
+/* -------------------- CORS (GLOBAL & EXPLICIT) -------------------- */
+const FRONTEND_ORIGIN = "https://subtle-gumdrop-b9bbea.netlify.app";
+
 app.use((req, res, next) => {
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    "https://subtle-gumdrop-b9bbea.netlify.app"
-  );
+  res.setHeader("Access-Control-Allow-Origin", FRONTEND_ORIGIN);
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, OPTIONS"
@@ -23,6 +22,7 @@ app.use((req, res, next) => {
     "Content-Type, Authorization"
   );
 
+  // Handle preflight requests
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
@@ -30,36 +30,26 @@ app.use((req, res, next) => {
   next();
 });
 
-/* ---------- RATE LIMIT ---------- */
+/* -------------------- RATE LIMIT (SKIP OPTIONS) -------------------- */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 50
 });
 
-/* ---------- HEALTH CHECK ---------- */
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return next(); // never rate-limit preflight
+  }
+  limiter(req, res, next);
+});
+
+/* -------------------- HEALTH CHECK -------------------- */
 app.get("/health", (req, res) => {
   res.send("OK");
 });
 
-// Handle CORS preflight for /fix
-app.options("/fix", (req, res) => {
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    "https://subtle-gumdrop-b9bbea.netlify.app"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "POST, OPTIONS"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-  return res.sendStatus(200);
-});
-
-/* ---------- FIX ENDPOINT ---------- */
-app.post("/fix", limiter, async (req, res) => {
+/* -------------------- FIX ENDPOINT -------------------- */
+app.post("/fix", async (req, res) => {
   const { text, tone = "professional" } = req.body;
 
   if (!text || text.length > 400) {
@@ -72,18 +62,19 @@ app.post("/fix", limiter, async (req, res) => {
     polite:
       "Rewrite politely with basic courtesy.",
     professional:
-      "Rewrite in clear professional office English.",
+      "Rewrite in clear, neutral professional office English.",
     boss:
       "Rewrite in highly respectful, formal, client-facing English. Use words like Kindly, Please, or We would appreciate."
   };
 
   const prompt = `
-Rewrite this WhatsApp office message into correct English.
+Rewrite the following WhatsApp office message into correct English.
 
 Rules:
 - Do not explain
 - Do not add information
-- Output only the corrected message
+- Keep it concise
+- Output only the rewritten message
 
 Tone requirement:
 ${toneMap[tone]}
@@ -109,7 +100,10 @@ ${text}
       }
     );
 
-    let output = response.data.choices[0].message.content.trim();
+    let output =
+      response.data.choices[0].message.content.trim();
+
+    // Clean rare model artifacts
     if (output.startsWith("<s>")) {
       output = output.replace("<s>", "").trim();
     }
@@ -121,7 +115,7 @@ ${text}
   }
 });
 
-/* ---------- START SERVER ---------- */
+/* -------------------- START SERVER -------------------- */
 app.listen(3000, () => {
   console.log("Backend running on port 3000");
 });
