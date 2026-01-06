@@ -41,6 +41,23 @@ app.get("/health", (req, res) => {
   res.send("OK");
 });
 
+// Handle CORS preflight for /fix
+app.options("/fix", (req, res) => {
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://subtle-gumdrop-b9bbea.netlify.app"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "POST, OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  return res.sendStatus(200);
+});
+
 /* ---------- FIX ENDPOINT ---------- */
 app.post("/fix", limiter, async (req, res) => {
   const { text, tone = "professional" } = req.body;
