@@ -8,33 +8,35 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+/* Rate limiting */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // limit each IP to 50 requests per window
+  max: 50,
   standardHeaders: true,
   legacyHeaders: false
 });
 
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_API_URL =
+  "https://openrouter.ai/api/v1/chat/completions";
 
 /* Health check */
 app.get("/health", (req, res) => {
   res.send("OK");
 });
 
-/* Tone-specific instructions */
+/* STRICT tone ladder: least → most respectful */
 const toneInstructions = {
   casual:
-    "Sound natural and friendly, like a teammate chatting at work. Keep it relaxed and informal but clear.",
+    "Rewrite in simple, casual office English. Sound direct and friendly like a teammate. Avoid formal words.",
 
   polite:
-    "Sound courteous and respectful. Use polite wording without being too formal.",
+    "Rewrite politely and respectfully. Use 'please' or similar courtesy, but keep it normal and not formal.",
 
   professional:
-    "Sound clear, neutral, and professional. Suitable for internal office communication.",
+    "Rewrite in clear, neutral, professional office English suitable for internal communication.",
 
   boss:
-    "Sound highly respectful, polished, and client-facing. Use formal phrasing, indirect requests, and professional courtesy. Avoid casual language."
+    "Rewrite in highly respectful, formal, and client-facing English. Use indirect phrasing, professional courtesy, and politeness markers such as 'Kindly', 'Please', or 'We would appreciate if'. Avoid casual language completely."
 };
 
 app.post("/fix", limiter, async (req, res) => {
@@ -87,22 +89,26 @@ ${cleanText}
       }
     );
 
-    const output = response.data?.choices?.[0]?.message?.content?.trim();
+    let output =
+      response.data?.choices?.[0]?.message?.content?.trim();
+
+    /* Clean rare model token artifacts */
+    if (output?.startsWith("<s>")) {
+      output = output.replace("<s>", "").trim();
+    }
+
     res.json({ result: output });
 
   } catch (error) {
-    console.error("OPENROUTER ERROR STATUS:", error.response?.status);
-    console.error("OPENROUTER ERROR DATA:", error.response?.data);
-    console.error("OPENROUTER ERROR MESSAGE:", error.message);
+    console.error("OPENROUTER ERROR:", error.response?.data || error.message);
 
     res.status(500).json({
       error: "AI error",
-      status: error.response?.status,
       details: error.response?.data || error.message
     });
   }
 });
 
 app.listen(3000, () => {
-  console.log("Backend running on http://localhost:3000");
+  console.log("Backend running on port 3000");
 });
