@@ -17,6 +17,27 @@ app.use(
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://subtle-gumdrop-b9bbea.netlify.app"
+  );
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
 /* Rate limiting */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
